@@ -3,62 +3,50 @@ package main
 import (
 	"fmt"
 	"strconv"
-	//memberlist "github.com/hashicorp/memberlist"
+	"math/rand"
 )
 
-func main(){
-	//list, err := memberlist.Create(memberlist.DefaultLocalConfig())
-	//if err != nil {
-	//	panic("Failed to create memberlist: " + err.Error())
-	//}
-	//// Ask for members of the cluster
-	//for _, member := range list.Members() {
-	//	fmt.Printf("Member: %s %s\n", member.Name, member.Addr)
-	//}
+type Node struct {
+	index int
+	mailBox chan string
+}
 
-	channels := []chan string{
-		make(chan string),
-		make(chan string),
+func (node *Node) Listening() string{
+	return <- node.mailBox
+}
+
+func (node *Node) SpreadRumor(message string, mailBoxes []chan string) {
+	for i:= range mailBoxes {
+		if i != node.index && rand.Intn(100) < 25 {
+			mailBoxes[i] <- "Message From: " + strconv.Itoa(node.index) + " Message: " + message;
+		}
+	}
+}
+
+func main(){
+
+	channels  := make([]chan string, 100)
+	for index := range channels {
+		channels[index] = make(chan string)
 	}
 
-	go node(channels, 0)
-	go node(channels, 1)
-
+	for index := range channels {
+		go node(channels, index)
+	}
 
 	channels[0]<-"Hiyo"
-	//channel := make(chan string)
-	//go sendNode(channel)
-	//go listenNode(channel)
 
 	var input string
 	fmt.Scanln(&input)
 	fmt.Println("done")
 }
 
-
 func node (mailBoxes []chan string, index int) {
-	mailBox := mailBoxes[index]
-	for i := 0;i<100; i++ {
-		message:= <-mailBox
-		fmt.Print("Message Received: "+ message + "\n")
-		for i:= range mailBoxes {
-			if i != index {
-				mailBoxes[i] <- "Message From: " + strconv.Itoa(index) + " Message: " + message;
-			}
-		}
+	node := Node {
+		index: index,
+		mailBox: mailBoxes[index],
 	}
-}
-
-func sendNode (sending chan string) {
-	sending<-"Hello"
-}
-
-func listenNode(listening chan string) {
-	fmt.Print(<-listening)
-}
-
-func printNumbers(from string, count int) {
-	for i := 0; i < count; i++ {
-		fmt.Println(from, ":", i)
-	}
+	message := node.Listening()
+	fmt.Print("Message Received: " + message + "\n")
+	node.SpreadRumor(message, mailBoxes)
 }
