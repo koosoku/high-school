@@ -17,7 +17,7 @@ func (node *Node) Listening() string{
 
 func (node *Node) SpreadRumor(message string, mailBoxes []chan string) {
 	for i:= range mailBoxes {
-		if i != node.index && rand.Intn(100) < 25 {
+		if i != node.index && rand.Intn(100) < 1 {
 			mailBoxes[i] <- "Message From: " + strconv.Itoa(node.index) + " Message: " + message;
 		}
 	}
@@ -25,7 +25,7 @@ func (node *Node) SpreadRumor(message string, mailBoxes []chan string) {
 
 func main(){
 
-	channels  := make([]chan string, 100)
+	channels  := make([]chan string, 1000000)
 	for index := range channels {
 		channels[index] = make(chan string)
 	}
